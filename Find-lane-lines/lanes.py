@@ -15,6 +15,8 @@ def make_points(image, line):
 def average_slope_intercept(image, lines):
     left_fit = []
     right_fit = []
+    if lines is None:
+        return None
     for line in lines:
         x1, y1, x2, y2 = line.reshape(4)
         fit = np.polyfit((x1, x2), (y1, y2), 1)
@@ -25,11 +27,13 @@ def average_slope_intercept(image, lines):
         else:
                 right_fit.append((slope, intercept))
     # add more weight to longer lines
-    left_fit_average = np.average(left_fit, axis=0)
-    right_fit_average = np.average(right_fit, axis=0)
-    left_line = make_points(image, left_fit_average)
-    right_line = make_points(image, right_fit_average)
-    return np.array([left_line,right_line])
+    if len(left_fit) and len(right_fit):
+
+        left_fit_average = np.average(left_fit, axis=0)
+        right_fit_average = np.average(right_fit, axis=0)
+        left_line = make_points(image, left_fit_average)
+        right_line = make_points(image, right_fit_average)
+        return np.array([left_line,right_line])
 
 def canny(m):
     gray_im = cv2.cvtColor(m, cv2.COLOR_BGR2GRAY)
@@ -57,13 +61,29 @@ def display_lines(image,lines):
     return line_image
 
 
-image = cv2.imread('test_image.jpg')
-copy_im = np.copy(image)
-m = canny(copy_im)
-int_reg = interest_region(m)
-lines = cv2.HoughLinesP(int_reg,2,np.pi/180,100, np.array([]), minLineLength=40, maxLineGap=5)
-averaged_lines = average_slope_intercept(copy_im, lines)
-image_lines= display_lines(copy_im,averaged_lines)
-com_image =cv2.addWeighted(copy_im, 0.8, image_lines, 1, 1)
-cv2.imshow("result", com_image)
-cv2.waitKey(0)
+#image = cv2.imread('test_image.jpg')
+#copy_im = np.copy(image)
+#m = canny(copy_im)
+#int_reg = interest_region(m)
+#lines = cv2.HoughLinesP(int_reg,2,np.pi/180,100, np.array([]), minLineLength=40, maxLineGap=5)
+#averaged_lines = average_slope_intercept(copy_im, lines)
+#image_lines= display_lines(copy_im,averaged_lines)
+#com_image =cv2.addWeighted(copy_im, 0.8, image_lines, 1, 1)
+#cv2.imshow("result", com_image)
+#cv2.waitKey(0)
+
+cap = cv2.VideoCapture("video.mp4")
+while(cap.isOpened()):
+    _,frame = cap.read()
+    m = canny(frame)
+    int_reg = interest_region(m)
+    lines = cv2.HoughLinesP(int_reg, 2, np.pi / 180, 100, np.array([]), minLineLength=40, maxLineGap=5)
+    averaged_lines = average_slope_intercept(frame, lines)
+    image_lines = display_lines(frame, averaged_lines)
+    com_image = cv2.addWeighted(frame, 0.8, image_lines, 1, 1)
+    cv2.imshow("result", com_image)
+    cv2.waitKey(1)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+cap.release()
+cv2.destroyAllWindows()
